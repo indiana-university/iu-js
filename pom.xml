@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>edu.iu.util</groupId>
+		<artifactId>iu-parent</artifactId>
+		<version>7.0.0-SNAPSHOT</version>
+		<relativePath />
+	</parent>
+
+	<artifactId>iu-js-parent</artifactId>
+	<version>0.7.0-SNAPSHOT</version>
+
+	<name>IU JavaScript Parent</name>
+	<packaging>pom</packaging>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<artifactId>maven-war-plugin</artifactId>
+					<configuration>
+						<failOnMissingWebXml>false</failOnMissingWebXml>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>com.github.eirslett</groupId>
+					<artifactId>frontend-maven-plugin</artifactId>
+					<version>1.12.1</version>
+					<configuration>
+						<nodeVersion>v16.16.0</nodeVersion>
+						<npmVersion>8.11.0</npmVersion>
+						<installDirectory>${project.build.directory}/js</installDirectory>
+					</configuration>
+					<executions>
+						<execution>
+							<id>js-install-node-and-npm</id>
+							<goals>
+								<goal>install-node-and-npm</goal>
+							</goals>
+							<phase>generate-resources</phase>
+						</execution>
+						<execution>
+							<id>js-process</id>
+							<phase>generate-resources</phase>
+							<goals>
+								<goal>npm</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<profiles>
+                <profile>
+                        <id>iu-default</id>
+                        <activation>
+                                <activeByDefault>true</activeByDefault>
+                        </activation>
+                        <modules>
+                                <module>util</module>
+                        </modules>
+                </profile>
+	</profiles>
+
+
+</project>
