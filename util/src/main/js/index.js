@@ -38,7 +38,7 @@ if (!!window.Rivet) {
 	const rivetEventListener = a => {
 		if (a.start) rivet.showLoadingIndicator()
 		if (a.stop) rivet.hideLoadingIndicator()
-		if (a.error) rivet.errorDialog(a.error)
+		if (a.error) rivet.openErrorModal(a.error)
 	}
 	rest.subscribe(rivetEventListener)
 	websocket.subscribe(rivetEventListener)

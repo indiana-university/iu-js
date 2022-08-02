@@ -173,7 +173,7 @@ export function subscribe(s) {
 	stream.subscribe(s)
 }
 
-export function webSocket(url, message, pingInterval = 300000, absolute) {
+export function send(url, message, pingInterval = 300000, absolute) {
     const uri = getUrl(url, null, absolute).replace(/^http/, 'ws')
     let socket = webSocketClients[uri]
     if (!socket) socket = new WebSocketClient(uri, pingInterval)
