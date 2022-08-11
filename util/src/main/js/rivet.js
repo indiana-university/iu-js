@@ -6,15 +6,15 @@
   modification, are permitted provided that the following conditions are met:
 
   * Redistributions of source code must retain the above copyright notice, this
-	list of conditions and the following disclaimer.
+    list of conditions and the following disclaimer.
 
   * Redistributions in binary form must reproduce the above copyright notice,
-	this list of conditions and the following disclaimer in the documentation
-	and/or other materials provided with the distribution.
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
 
   * Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -157,13 +157,13 @@ function labelValue (label, value) {
   return e
 }
 
-function handleModalCloseReload(e) {
+function handleModalCloseReload (e) {
   e.stopPropagation()
   e.preventDefault()
   window.location.reload()
 }
 
-function handleModalClose(activeElement, dialog, body) {
+function handleModalClose (activeElement, dialog, body) {
   body.removeChild(dialog)
   window.requestAnimationFrame(
     () => window.requestAnimationFrame(() => {
@@ -179,7 +179,7 @@ function handleModalClose(activeElement, dialog, body) {
   )
 }
 
-function handleTab(event, element) {
+function handleTab (event, element) {
   const { shiftKey, target } = event
   const focusableEl = getFocusableElements(element)
   const firstFocusableEl = focusableEl[0]
@@ -198,7 +198,7 @@ function handleTab(event, element) {
   }
 }
 
-function isFocusable(element) {
+function isFocusable (element) {
   switch (element.tagName) {
     case 'A':
       return element.href && element.href.length
@@ -213,7 +213,7 @@ function isFocusable(element) {
   }
 }
 
-function getFocusableElements(element) {
+function getFocusableElements (element) {
   const focusable = element.querySelectorAll(focusableElementList)
   const focusableArray = Array.prototype.slice.call(focusable)
   const enabledFocusable = focusableArray.filter(el => {
@@ -234,33 +234,29 @@ if (!loading && document.body) {
   document.body.appendChild(loading)
 }
 
-export function showLoadingIndicator() {
+export function showLoadingIndicator () {
   loading.style.display = 'block'
 }
 
-export function hideLoadingIndicator() {
+export function hideLoadingIndicator () {
   loading.style.display = 'none'
 }
 
-export function renderErrorSection(props) {
+export function renderErrorSection (props) {
   const errorMain = document.createElement('div')
 
   if (props.modal) {
-    errorMain.setAttribute('class', 'rvt-modal__inner')
-    errorMain.setAttribute('data-rvt-modal-inner', 'true')
+    errorMain.setAttribute('class', 'rvt-dialog__inner')
+    errorMain.setAttribute('data-rvt-dialog-inner', 'true')
 
     const modalHeader = document.createElement('div')
-    modalHeader.setAttribute('class', 'rvt-modal__header')
+    modalHeader.setAttribute('class', 'rvt-dialog__header')
 
     const titleH1 = document.createElement('h1')
-    titleH1.setAttribute('id', 'error-modal-title')
-    titleH1.setAttribute('class', 'rvt-modal__title')
+    titleH1.setAttribute('id', 'error-dialog-title')
+    titleH1.setAttribute('class', 'rvt-dialog__title')
     if (props.status) {
-      if (statusCodes[props.status])
-        titleH1.textContent = 'HTTP ' + props.status + ' - ' + statusCodes[props.status]
-      else if (webSocketCloseResons[props.status])
-        titleH1.textContent = 'Web Socket ' + props.status + ' - ' + webSocketCloseResons[props.status]
-      else titleH1.textContent = 'Error ' + props.status
+      if (statusCodes[props.status]) { titleH1.textContent = 'HTTP ' + props.status + ' - ' + statusCodes[props.status] } else if (webSocketCloseResons[props.status]) { titleH1.textContent = 'Web Socket ' + props.status + ' - ' + webSocketCloseResons[props.status] } else titleH1.textContent = 'Error ' + props.status
     } else titleH1.textContent = 'Internal Error'
     modalHeader.appendChild(titleH1)
 
@@ -372,7 +368,7 @@ export function renderErrorSection(props) {
   if (props.requestNumber) errorContent.appendChild(labelValue('Request #', props.requestNumber))
   if (props.nodeId) errorContent.appendChild(labelValue('Node', props.nodeId))
   if (props.modal) {
-    errorContent.setAttribute('class', 'rvt-modal__body')
+    errorContent.setAttribute('class', 'rvt-dialog__body')
     errorMain.appendChild(errorContent)
 
     if (props.closeModal) {
@@ -380,7 +376,7 @@ export function renderErrorSection(props) {
       closeButton.setAttribute('role', 'button')
       closeButton.onclick = props.closeModal
       if (!props.reload) {
-        closeButton.setAttribute('class', 'rvt-button rvt-button--plain rvt-modal__close')
+        closeButton.setAttribute('class', 'rvt-button rvt-button--plain rvt-dialog__close')
 
         const closeSrLabel = document.createElement('span')
         if (!props.reload) {
@@ -409,7 +405,7 @@ export function renderErrorSection(props) {
         closeButton.appendChild(closeButtonSpan)
 
         const controls = document.createElement('div')
-        controls.setAttribute('class', 'rvt-modal__controls')
+        controls.setAttribute('class', 'rvt-dialog__controls')
         controls.appendChild(closeButton)
 
         errorMain.appendChild(controls)
@@ -437,24 +433,26 @@ export function renderErrorSection(props) {
   return errorMain
 }
 
-export function openErrorModal(data, reload) {
+export function openErrorModal (data, reload) {
   const activeElement = document.activeElement
   const body = document.querySelector('body')
-  const scopeWrapper = document.createElement('div')
-  scopeWrapper.className = 'rvt-scope'
+  // const scopeWrapper = document.createElement('div')
+  // scopeWrapper.className = 'rvt-scope'
 
   const dialog = document.createElement('section')
   dialog.setAttribute('id', 'error-dialog')
-  dialog.setAttribute('class', 'rvt-modal')
-  dialog.setAttribute('id', 'error-modal')
-  dialog.setAttribute('aria-labelledby', 'error-modal-title')
-  dialog.setAttribute('data-rvt-modal', 'error-modal')
+  dialog.setAttribute('class', 'rvt-dialog')
+  dialog.setAttribute('aria-labelledby', 'error-dialog-title')
+  dialog.setAttribute('data-rvt-dialog', 'error-dialog')
+  dialog.setAttribute('data-rvt-dialog-modal', 'true')
+  dialog.setAttribute('data-rvt-dialog-darken-page', 'true')
+  dialog.setAttribute('data-rvt-dialog-disable-page-interaction', 'true')
 
   dialog.setAttribute('role', 'dialog')
   dialog.setAttribute('tabindex', '-1')
   dialog.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      reload ? handleModalCloseReload(e) : handleModalClose(activeElement, scopeWrapper, body)
+      reload ? handleModalCloseReload(e) : handleModalClose(activeElement, dialog, body)
     }
     if (e.key === 'Tab') {
       handleTab(e, dialog)
@@ -466,15 +464,15 @@ export function openErrorModal(data, reload) {
   props.modal = true
   props.closeModal = (e) => {
     if (reload) handleModalCloseReload(e)
-    else handleModalClose(activeElement, scopeWrapper, body)
+    else handleModalClose(activeElement, dialog, body)
   }
   props.reload = reload
-  dialog.appendChild(RivetError(props))
+  dialog.appendChild(renderErrorSection(props))
   dialog.style.display = 'block'
 
-  scopeWrapper.appendChild(dialog)
-  body.appendChild(scopeWrapper)
+  // scopeWrapper.appendChild(dialog)
+  body.appendChild(dialog)
   dialog.focus()
 
-  return () => handleModalClose(activeElement, scopeWrapper, body)
+  return () => handleModalClose(activeElement, dialog, body)
 }

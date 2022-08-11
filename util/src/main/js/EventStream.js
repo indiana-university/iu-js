@@ -6,15 +6,15 @@
   modification, are permitted provided that the following conditions are met:
 
   * Redistributions of source code must retain the above copyright notice, this
-	list of conditions and the following disclaimer.
+    list of conditions and the following disclaimer.
 
   * Redistributions in binary form must reproduce the above copyright notice,
-	this list of conditions and the following disclaimer in the documentation
-	and/or other materials provided with the distribution.
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
 
   * Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -28,98 +28,90 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 export default class EventStream {
-	constructor() {
-		this.listeners = []
-	}
+  constructor () {
+    this.listeners = []
+  }
 
-	next(o) {
-		if (!this.listeners)
-			throw new Error('EventStream completed')
+  next (o) {
+    if (!this.listeners) { throw new Error('EventStream completed') }
 
-		this.last = o
-		delete this.lastError
+    this.last = o
+    delete this.lastError
 
-		this.listeners.forEach(s => {
-			if (s.next)
-				try {
-					s.next(o)
-				} catch (e) {
-					if (s.error)
-						s.error(e)
-					else
-						console.error(e)
-				}
-		})
-	}
+    this.listeners.forEach(s => {
+      if (s.next) {
+        try {
+          s.next(o)
+        } catch (e) {
+          if (s.error) { s.error(e) } else { console.error(e) }
+        }
+      }
+    })
+  }
 
-	error(e) {
-		if (!this.listeners)
-			throw new Error('EventStream completed')
+  error (e) {
+    if (!this.listeners) { throw new Error('EventStream completed') }
 
-		delete this.last
-		this.lastError = e
+    delete this.last
+    this.lastError = e
 
-		let one = false
-		this.listeners.forEach(s => {
-			if (s.error)
-				try {
-					s.error(e)
-					one = true
-				} catch (e2) {
-					console.error(e2)
-				}
-		})
-		if (!one) console.error(e)
-	}
+    let one = false
+    this.listeners.forEach(s => {
+      if (s.error) {
+        try {
+          s.error(e)
+          one = true
+        } catch (e2) {
+          console.error(e2)
+        }
+      }
+    })
+    if (!one) console.error(e)
+  }
 
-	complete() {
-		const { listeners } = this
-		delete this.listeners
-		if (listeners)
-			listeners.forEach(s => {
-				if (s.complete)
-					try {
-						s.complete()
-					} catch (e) {
-						if (s.error)
-							s.error(e)
-						else
-							console.error(e)
-					}
-			})
-	}
+  complete () {
+    const { listeners } = this
+    delete this.listeners
+    if (listeners) {
+      listeners.forEach(s => {
+        if (s.complete) {
+          try {
+            s.complete()
+          } catch (e) {
+            if (s.error) { s.error(e) } else { console.error(e) }
+          }
+        }
+      })
+    }
+  }
 
-	subscribe(subscriber) {
-		if (typeof subscriber === 'function')
-			subscriber = { next: subscriber }
+  subscribe (subscriber) {
+    if (typeof subscriber === 'function') { subscriber = { next: subscriber } }
 
-		if (this.last && subscriber.next)
-			subscriber.next(this.last)
-		if (this.lastError && subscriber.error)
-			subscriber.error(this.lastError)
-		if (!this.listeners) {
-			if (subscriber.complete)
-				subscriber.complete()
-			return null
-		}
+    if (this.last && subscriber.next) { subscriber.next(this.last) }
+    if (this.lastError && subscriber.error) { subscriber.error(this.lastError) }
+    if (!this.listeners) {
+      if (subscriber.complete) { subscriber.complete() }
+      return null
+    }
 
-		if (this.listeners) this.listeners.push(subscriber)
+    if (this.listeners) this.listeners.push(subscriber)
 
-		const children = []
-		return {
-			add: c => children.push(c),
-			remove: c => {
-				const i = children.indexOf(c)
-				if (i !== -1) children.splice(i, 1)
-			},
-			unsubscribe: () => {
-				const { listeners } = this
-				if (listeners) {
-					const i = listeners.indexOf(subscriber)
-					if (i !== -1) listeners.splice(i, 1)
-				}
-				children.forEach(c => c.unsubscribe())
-			}
-		}
-	}
+    const children = []
+    return {
+      add: c => children.push(c),
+      remove: c => {
+        const i = children.indexOf(c)
+        if (i !== -1) children.splice(i, 1)
+      },
+      unsubscribe: () => {
+        const { listeners } = this
+        if (listeners) {
+          const i = listeners.indexOf(subscriber)
+          if (i !== -1) listeners.splice(i, 1)
+        }
+        children.forEach(c => c.unsubscribe())
+      }
+    }
+  }
 }

@@ -27,155 +27,222 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import { broadcast } from './environment'
+/* globals WebSocket */
+import { shortuid } from './util'
+import { broadcast, getUrl, getNodeId } from './environment'
 import EventStream from './EventStream'
 
+const webSocketClients = {}
 const stream = new EventStream()
+let pingInterval = 300000
 
 class WebSocketClient {
-    constructor(uri, pingInterval = 300000) {
-        this.uri = uri
-        this.pingInterval = pingInterval
-        this.pendingMessages = []
-        this.online = false
-        this.connect()
-    }
+  #clientId = shortuid()
+  #uri
+  #socket
+  #nonce
+  #pingTimer
+  #closeOfflineDialog
+  #pendingMessages = []
+  #online = false
 
-    sendPendingMessages() {
-        const { socket, pendingMessages } = this
-        if (!socket || socket.readyState > WebSocket.OPEN)
-            errorDialog({
-                message: "A internal error has occurred (invalid socket state).",
-                nodeId: environment.nodeId, severe: true, reload: true
-            })
-        else
-            pendingMessages.splice(0).forEach(m => socket.send(JSON.stringify(m)))
-    }
+  constructor (uri) {
+    this.#uri = uri
+    this.#connect()
+  }
 
-    ping() {
-        const { socket } = this
-        if (!socket || socket.readyState > WebSocket.OPEN)
-            errorDialog({
-                message: "A internal error has occurred (invalid socket state).",
-                nodeId: environment.nodeId, severe: true, reload: true
-            })
-        else {
-            this.nonce = shortuid()
-            socket.send(JSON.stringify({
-                message: { nodeId: environment.nodeId, nonce: this.nonce },
-                type: 'ClientPing'
-            }))
+  #sendPendingMessages () {
+    const socket = this.#socket
+    if (!socket || socket.readyState > WebSocket.OPEN) {
+      stream.next({
+        error: {
+          message: 'A internal error has occurred (invalid socket state).',
+          nodeId: getNodeId(),
+          severe: true,
+          reload: true
         }
-    }
+      })
+    } else { this.#pendingMessages.splice(0).forEach(m => socket.send(JSON.stringify(m))) }
+  }
 
-    send(message) {
-        const { online, pendingMessages, socket } = this
-        if (!online) pendingMessages.push(message)
-        else socket.send(JSON.stringify(message))
-    }
-
-    handleServerPing(ping) {
-        if (ping.nodeId !== environment.nodeId) errorDialog({
-            message: "A internal error has occurred (node mismatch).",
-            nodeId: environment.nodeId, severe: true, reload: true
-        })
-        else if (ping.nonce !== environment.nonce) errorDialog({
-            message: "A internal error has occurred (nonce mismatch).",
-            nodeId: environment.nodeId, severe: true, reload: true
-        })
-        else {
-            this.nonce = null
-            this.handleStatus(ping)
+  #ping () {
+    const socket = this.#socket
+    if (!socket || socket.readyState > WebSocket.OPEN) {
+      stream.next({
+        error: {
+          message: 'A internal error has occurred (invalid socket state).',
+          nodeId: getNodeId(),
+          severe: true,
+          reload: true
         }
+      })
+    } else {
+      this.#nonce = shortuid()
+      socket.send(JSON.stringify({
+        message: { clientId: this.#clientId, nodeId: getNodeId(), nonce: this.#nonce },
+        type: 'ClientPing'
+      }))
     }
+  }
 
-    handleStatus(status) {
-        this.online = status.online
-        if (!status.online) this.closeOfflineDialog = errorDialog({
-            message: "This service is temporarily down for maintenance. Please try again later.",
-            nodeId: environment.nodeId, status: 503
-        })
-        else {
-            if (this.closeOfflineDialog) {
-                this.closeOfflineDialog()
-                delete this.closeOfflineDialog
-            }
-            this.sendPendingMessages()
+  #handleServerPing (ping) {
+    if (ping.nodeId !== getNodeId()) {
+      stream.next({
+        error: {
+          message: 'A internal error has occurred (node mismatch).',
+          nodeId: getNodeId(),
+          severe: true,
+          reload: true
         }
+      })
+    } else if (ping.clientId !== this.#clientId) {
+      stream.next({
+        error: {
+          message: 'A internal error has occurred (client ID mismatch).',
+          nodeId: getNodeId(),
+          severe: true,
+          reload: true
+        }
+      })
+    } else if (ping.nonce !== this.#nonce) {
+      stream.next({
+        error: {
+          message: 'A internal error has occurred (nonce mismatch).',
+          nodeId: getNodeId(),
+          severe: true,
+          reload: true
+        }
+      })
+    } else {
+      this.#nonce = null
+      this.#handleStatus(ping)
+      this.#pingTimer = setTimeout(() => this.#ping(), pingInterval)
     }
+  }
 
-    connect() {
-        let oldSocket = this.socket
-        const closeOldSocket = oldSocket && setTimeout(() => {
+  #handleStatus (status) {
+    this.#online = status.online
+    if (!status.online) {
+      this.#closeOfflineDialog = stream.next({
+        error: {
+          message: 'This service is temporarily down for maintenance. Please try again later.',
+          nodeId: getNodeId(),
+          status: 503
+        }
+      })
+    } else {
+      if (this.#closeOfflineDialog) {
+        this.#closeOfflineDialog()
+        this.#closeOfflineDialog = null
+      }
+      this.#sendPendingMessages()
+    }
+  }
+
+  #connect () {
+    let oldSocket = this.#socket
+    const closeOldSocket = oldSocket && setTimeout(() => {
+      oldSocket.close()
+      oldSocket = null
+    }, 15000)
+
+    const socket = new WebSocket(this.#uri)
+
+    socket.addEventListener('open', () => {
+      this.#ping()
+    })
+
+    socket.addEventListener('message', d => {
+      const s = JSON.parse(d.data)
+      if (s) {
+        if (s.error) {
+          stream.next({
+            websocket: {
+              uri: this.#uri,
+              online: this.#online
+            },
+            error: s.error
+          })
+        } else if (s.type === 'ServerPing') {
+          this.#handleServerPing(s.message)
+          if (oldSocket) {
+            if (closeOldSocket) clearTimeout(closeOldSocket)
             oldSocket.close()
-            oldSocket = null
-        }, 15000)
+          }
+        } else if (s.type === 'ServerStatus') this.#handleStatus(s.message)
+        else if (s.type === 'SocketReconnect') this.#connect()
+        else {
+          stream.next({
+            websocket: {
+              uri: this.#uri,
+              online: this.#online
+            },
+            message: s
+          })
+          broadcast(s)
+        }
+      }
+    })
 
-        const socket = new WebSocket(this.uri)
+    socket.addEventListener('close', e => {
+      if (e.code === 1000) {
+        console.log('Web Socket closed', e)
+      } else {
+        console.error('Web Socket closed abnormally', e)
+      }
 
-        socket.addEventListener('open', () => {
-            this.ping()
-            if (this.pingInterval > 0)
-                this.pingTimer = setInterval(() => this.ping(), this.pingInterval)
+      if (socket !== this.#socket) return
+      this.#socket = null
+      this.#online = false
+
+      if (this.#pingTimer) {
+        clearTimeout(this.#pingTimer)
+        this.#pingTimer = null
+      }
+
+      if (e.code !== 1000) {
+        stream.next({
+          error: {
+            message: 'Connection closed unexpectedly. ' + e.reason,
+            status: e.code,
+            nodeId: getNodeId(),
+            severe: true,
+            reload: true
+          },
+          pendingMessages: this.#pendingMessages
         })
+      }
+    })
 
-        socket.addEventListener('message', d => {
-            const s = JSON.parse(d.data)
-            if (s) {
-                if (s.error) {
-                    stream.next({
-                        websocket: {
-                            uri: this.uri,
-                            online: this.online
-                        },
-                        error: s.error
-                    })
-                } else if (s.type === 'ServerPing') {
-                    this.handleServerPing(s.message)
-                    if (oldSocket) {
-                        if (closeOldSocket) clearTimeout(closeOldSocket)
-                        oldSocket.close()
-                    }
-                }
-                else if (s.type === 'ServerStatus') this.handleStatus(s.message)
-                else if (s.type === 'SocketReconnect') this.connect()
-                else {
-                    stream.next({
-                        websocket: {
-                            uri: this.uri,
-                            online: this.online
-                        },
-                        message: s
-                    })
-                    broadcast.next(s)
-                }
-            }
-        })
+    this.#socket = socket
+  }
 
-        socket.addEventListener('close', e => {
-            if (this.pingTimer && socket === this.socket) {
-                clearInterval(this.pingTimer)
-                delete this.pingTimer
-            }
-            if (!e.wasClean) errorDialog({
-                message: "Connection closed unexpectedly. " + e.reason,
-                status: e.code, nodeId: environment.nodeId, severe: true, reload: true
-            })
-        })
-
-        this.socket = socket
+  send (message) {
+    if (!this.#online) {
+      this.#pendingMessages.push(message)
+      if (!this.#socket) this.#connect()
+    } else {
+      this.#socket.send(JSON.stringify(message))
     }
+  }
 }
 
-const webSocketClients = {}
-
-export function subscribe(s) {
-	stream.subscribe(s)
+export function subscribe (s) {
+  stream.subscribe(s)
 }
 
-export function send(url, message, pingInterval = 300000, absolute) {
-    const uri = getUrl(url, null, absolute).replace(/^http/, 'ws')
-    let socket = webSocketClients[uri]
-    if (!socket) socket = new WebSocketClient(uri, pingInterval)
-    socket.send(message)
+export function setPingInterval (i) {
+  if (i > 0) pingInterval = i
+  else stream.error(new Error('Invalid ping interval'))
+}
+
+export function open (url, absolute) {
+  const uri = getUrl(url, null, absolute).toString().replace(/^http/, 'ws')
+  let socket = webSocketClients[uri]
+  if (!socket) webSocketClients[uri] = socket = new WebSocketClient(uri)
+  return socket
+}
+
+export function send (url, message, absolute) {
+  open(url, absolute).send(message)
 }
