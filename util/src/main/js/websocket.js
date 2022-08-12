@@ -40,7 +40,7 @@ class WebSocketClient {
   #clientId = shortuid()
   #uri
   #socket
-  #nonce
+  #nonces = []
   #pingTimer
   #closeOfflineDialog
   #pendingMessages = []
@@ -77,9 +77,10 @@ class WebSocketClient {
         }
       })
     } else {
-      this.#nonce = shortuid()
+      const nonce = shortuid()
+      this.#nonces.push(nonce)
       socket.send(JSON.stringify({
-        message: { clientId: this.#clientId, nodeId: getNodeId(), nonce: this.#nonce },
+        message: { clientId: this.#clientId, nodeId: getNodeId(), nonce },
         type: 'ClientPing'
       }))
     }
@@ -104,19 +105,22 @@ class WebSocketClient {
           reload: true
         }
       })
-    } else if (ping.nonce !== this.#nonce) {
-      stream.next({
-        error: {
-          message: 'A internal error has occurred (nonce mismatch).',
-          nodeId: getNodeId(),
-          severe: true,
-          reload: true
-        }
-      })
     } else {
-      this.#nonce = null
-      this.#handleStatus(ping)
-      this.#pingTimer = setTimeout(() => this.#ping(), pingInterval)
+      const ni = this.#nonces.indexOf(ping.nonce)
+      if (ni === -1) {
+        stream.next({
+          error: {
+            message: 'A internal error has occurred (nonce mismatch).',
+            nodeId: getNodeId(),
+            severe: true,
+            reload: true
+          }
+        })
+      } else {
+        this.#nonces.splice(ni, 1)
+        this.#handleStatus(ping)
+        this.#pingTimer = setTimeout(() => this.#ping(), pingInterval)
+      }
     }
   }
 
