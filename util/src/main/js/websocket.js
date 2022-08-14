@@ -119,7 +119,10 @@ class WebSocketClient {
       } else {
         this.#nonces.splice(ni, 1)
         this.#handleStatus(ping)
-        this.#pingTimer = setTimeout(() => this.#ping(), pingInterval)
+        this.#pingTimer = setTimeout(() => {
+          const socket = this.#socket
+          if (socket && socket.readyState === WebSocket.OPEN) this.#ping()
+        }, pingInterval)
       }
     }
   }
