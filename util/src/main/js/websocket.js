@@ -43,6 +43,7 @@ class WebSocketClient {
   #nonces = []
   #pingTimer
   #closeOfflineDialog
+  #reconnectNonces = []
   #pendingMessages = []
   #online = false
 
@@ -177,8 +178,14 @@ class WebSocketClient {
             oldSocket.close()
           }
         } else if (s.type === 'ServerStatus') this.#handleStatus(s.message)
-        else if (s.type === 'SocketReconnect') this.#connect()
-        else {
+        else if (s.type === 'SocketReconnect') {
+          const { nonce } = s.message
+          if (this.#reconnectNonces.indexOf(nonce) === -1) {
+            this.#reconnectNonces.push(nonce)
+            this.#connect()
+            this.#reconnectNonces.splice(this.#reconnectNonces.indexOf(nonce), 1)
+          }
+        } else {
           stream.next({
             websocket: {
               uri: this.#uri,
