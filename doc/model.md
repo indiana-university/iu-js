@@ -27,115 +27,129 @@ class {
 
 - Define a stream
 
-		class {
-			#stream = new iu.EventStream()
-			get stream () { return this.#stream }
-		}
+```javascript
+class {
+  #stream = new iu.EventStream()
+  get stream () { return this.#stream }
+}
+```
 
 - Subscribe to external streams in constructor
 
-		class {
-			constructor() {
-				iu.environment.subscribe(a => {
-					if (a.appliesToMe) {
-						this.#doStuffWith(a)
-						this.#stream.next(this)
-					}
-				}
-			}
-		}
+```javascript
+class {
+  constructor() {
+    iu.environment.subscribe(a => {
+      if (a.appliesToMe) {
+        this.#doStuffWith(a)
+        this.#stream.next(this)
+      }
+    }
+  }
+}
+```
 
 - Setters enforce type and publish changes
 
-		class {
-			set aThing (aThing) { // i.e. aString, anArray, anObject
-				if (aThing !== this.#aThing && // is changed
-						(aThing === null || // is explicitly null, not undefined, false, etc
-							typeof aThing === 'thing' // or is the expected type
-							// non-primitives use (aThing instanceof Thing)
-						) {
-					this.#aThing = aThing
-					this.#stream.next(this)
-				}
-			}
-		
-			set aDate (aDate) {
-				if (typeof aDate === 'string' || // ISO-8601 or epoch  millis
-						typeof aDate === 'number') aDate = new Date(aDate)
-				if (aDate !== this.#aDate && (aDate === null || aDate instanceof Date)) {
-					this.#aDate = aDate
-					this.#stream.next(this)
-				}
-			}
-		
-			set aBool (aBool) { // ignores non-boolean values, i.e. null or undefined
-				if (typeof aBool === 'boolean' && aBool !== this.#aBool) {
-					this.#aBool = aBool
-					this.#stream.next(this)
-				}
-			}
+```javascript
+class {
+  set aThing (aThing) { // i.e. aString, anArray, anObject
+    if (aThing !== this.#aThing && // is changed
+        (aThing === null || // is explicitly null, not undefined, false, etc
+          typeof aThing === 'thing' // or is the expected type
+          // non-primitives use (aThing instanceof Thing)
+        ) {
+      this.#aThing = aThing
+      this.#stream.next(this)
+    }
+  }
+
+  set aDate (aDate) {
+    if (typeof aDate === 'string' || // ISO-8601 or epoch  millis
+        typeof aDate === 'number') aDate = new Date(aDate)
+    if (aDate !== this.#aDate && (aDate === null || aDate instanceof Date)) {
+      this.#aDate = aDate
+      this.#stream.next(this)
+    }
+  }
+
+  set aBool (aBool) { // ignores non-boolean values, i.e. null or undefined
+    if (typeof aBool === 'boolean' && aBool !== this.#aBool) {
+      this.#aBool = aBool
+      this.#stream.next(this)
+    }
+  }
+}
+```
 
 - Use getters for calculated values
 
-		class {
-			constructor () {
-				iu.environment.subscribe(a => {
-					if (a.appliesToMe) {
-						// ...
-						this.#aCalculatedValue = null
-						this.#stream.next(this)	
-					}
-				})
-			}
+```javascript
+class {
+  constructor () {
+    iu.environment.subscribe(a => {
+      if (a.appliesToMe) {
+        // ...
+        this.#aCalculatedValue = null
+        this.#stream.next(this)  
+      }
+    })
+  }
 
-			get aCalculatedValue () {
-				if (!this.#aCalculatedValue) {
-					this.#aCalculatedValue = calculateWith(this.#aValueToDeriveFrom)
-				}
-				return this.#aCalculatedValue
-			}
-		}
+  get aCalculatedValue () {
+    if (!this.#aCalculatedValue) {
+      this.#aCalculatedValue = calculateWith(this.#aValueToDeriveFrom)
+    }
+    return this.#aCalculatedValue
+  }
+}
+```
 
 - Pass source stream to constructor for publishing generic updates
 
-		class A {
-			constructor (source$) {
-				source$.subscribe(a => {
-					this.#update(a)
-				})
-			}
-		}
-		
-		class {
-			#a$
-			#a
-		
-			constructor () {
-				this.#a$ = new iu.EventStream()
-				this.#a = new A(this.#a$)
-				iu.environment.subscribe(a => {
-					if (a.appliesToA) this.#a$.next(a)
-				})
-			}
-		}
+```javascript
+class A {
+  constructor (source$) {
+    source$.subscribe(a => {
+      this.#update(a)
+    })
+  }
+}
+
+class {
+  #a$
+  #a
+
+  constructor () {
+    this.#a$ = new iu.EventStream()
+    this.#a = new A(this.#a$)
+    iu.environment.subscribe(a => {
+      if (a.appliesToA) this.#a$.next(a)
+    })
+  }
+}
+```
 
 - Complete child object streams to release resources
 
-		class A {
-			#env$
-			#stream = iu.EventStream()
+```javascript
+class A {
+  #env$
+  #stream = iu.EventStream()
 
-			constructor () {
-				this.#env$ = iu.environment.subscribe(a => {
-					if (a.appliesToMe) this.#doSomethingWith(a)
-				})
-				this.#stream.subscribe({ complete: () => this.#env$.unsubscribe() })
-			}
+  constructor () {
+    this.#env$ = iu.environment.subscribe(a => {
+      if (a.appliesToMe) this.#doSomethingWith(a)
+    })
+    this.#stream.subscribe({ complete: () => this.#env$.unsubscribe() })
+  }
 
-			get stream () { return this.#stream }
-		}
+  get stream () { return this.#stream }
+}
 
-		// i.e. in componentDidMount()
-		this.#a = new A()
-		// i.e. in componentWillUnmount()
-		this.#a.stream.complete()
+// i.e. in componentDidMount()
+this.#a = new A()
+// i.e. in componentWillUnmount()
+this.#a.stream.complete()
+```
+
