@@ -2,26 +2,28 @@
 > a.k.a. state management
 
 - ES6 classes <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes>
-	- All members private, except getters and setters
-	- Only define getters where external access is required
-	- Only define setters where external modificaiton is expected
-	- Only use public methods for access to instaces of child objects
+  - All members private, except getters and setters
+  - Only define getters where external access is required
+  - Only define setters where external modificaiton is expected
+  - Only use public methods for access to instaces of child objects
 
 - Initialize null, false, and empty values
 
-		class {
-			#aRequiredValue
-			#aThing = null
-			#aDate = null
-			#aBool = false
-			#aString = ''
-			#anArray = []
-			#anObject = {}
+```javascript
+class {
+  #aRequiredValue
+  #aThing = null
+  #aDate = null
+  #aBool = false
+  #aString = ''
+  #anArray = []
+  #anObject = {}
 
-			constructor (aRequiredValue) {
-				this.#aRequiredValue = aRequiredValue
-			}
-		}
+  constructor (aRequiredValue) {
+    this.#aRequiredValue = aRequiredValue
+  }
+}
+```
 
 - Define a stream
 
