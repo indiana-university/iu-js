@@ -147,9 +147,9 @@ class A {
   get stream () { return this.#stream }
 }
 
-// i.e. in componentDidMount()
+// create an instance
 this.#a = new A()
-// i.e. in componentWillUnmount()
+// before discarding
 this.#a.stream.complete()
 ```
 

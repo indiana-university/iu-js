@@ -78,7 +78,12 @@ export function createSearchParams (params) {
 }
 
 export function getUrl (url, params, absolute) {
-  const base = absolute ? undefined : environment.applicationUrl
+  let base
+  if (!absolute) {
+    base = environment.applicationUrl
+    if (base.lastIndexOf('/') !== base.length - 1) base += '/'
+  }
+
   const query = createSearchParams(params)
   const externalForm = query ? url + '?' + query : url
   return new URL(externalForm, base)

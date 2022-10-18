@@ -242,7 +242,7 @@ class WebSocketClient {
 }
 
 export function subscribe (s) {
-  stream.subscribe(s)
+  return stream.subscribe(s)
 }
 
 export function setPingInterval (i) {
