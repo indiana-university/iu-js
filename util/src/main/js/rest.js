@@ -46,93 +46,105 @@ export class RestClient {
     this.#reload = !!reload
   }
 
+  #handleServerError (xhr, call, request) {
+    let error
+    try {
+      if (xhr.responseText) {
+        if (xhr.responseText.indexOf('<html') !== -1) {
+          const responseElement = document.createElement('html')
+          responseElement.innerHTML = xhr.responseText
+          const responseScriptTags = responseElement.querySelectorAll('body>script')
+          if (responseScriptTags) {
+            for (let i = responseScriptTags.length - 1; i >= 0; i--) {
+              const responseScriptTag = responseScriptTags.item(i)
+              try {
+                const scriptTagContent = responseScriptTag.textContent
+                if (scriptTagContent &&
+                      scriptTagContent.startsWith('renderError({') &&
+                      scriptTagContent.endsWith('})')) {
+                  error = JSON.parse(scriptTagContent.slice(12, scriptTagContent.length - 1))
+                }
+              } catch (e) {
+                call.error(e)
+              }
+            }
+          }
+        } else error = JSON.parse(xhr.responseText)
+      }
+    } catch (e) {
+      call.error(e)
+    }
+
+    if (!error) error = { status: xhr.status }
+
+    error.reload = this.#reload
+    stream.next({
+      request,
+      stop: true,
+      error
+    })
+  }
+
+  #handleServerResponse (xhr, call, request, responseContentType) {
+    let response
+    try {
+      const { responseText } = xhr
+      if (responseContentType === 'application/json') {
+        response = JSON.parse(responseText)
+      } else if (responseContentType === 'text/html') {
+        const responseElement = document.createElement('html')
+        responseElement.outerHTML = xhr.responseText
+        response = responseElement
+      }
+
+      call.next(response)
+      broadcast(response)
+
+      stream.next({
+        xhr,
+        request,
+        stop: true
+      })
+    } catch (e) {
+      call.error(e)
+      stream.next({
+        xhr,
+        request,
+        error: {
+          message: 'An internal error has occurred.',
+          severe: true,
+          reload: this.#reload
+        },
+        stop: true
+      })
+    }
+  }
+
   send (method, data, contentType) {
     const xhr = new XMLHttpRequest()
     const call = new EventStream()
+    const methodAcceptsContent = method === 'POST' || method === 'PUT' || method === 'PATCH'
 
     let url = this.#url
-    if (method === 'POST' || method === 'PUT') {
-      if (contentType) xhr.setRequestHeader('Content-Type', contentType)
-    } else {
-      if (data) {
-        const searchData = new URLSearchParams(data)
-        if (url.search) url = new URL(url + '&' + searchData)
-        else url = new URL(url + '?' + searchData)
-      }
+    if (data && !methodAcceptsContent) {
+      const searchData = new URLSearchParams(data)
+      if (url.search) url = new URL(url + '&' + searchData)
+      else url = new URL(url + '?' + searchData)
       data = null
     }
 
+    const request = { url, method, data, contentType }
+
     xhr.open(method, url)
 
-    const handleServerError = () => {
-      let error
-      try {
-        if (xhr.responseText) {
-          if (xhr.responseText.indexOf('<html') !== -1) {
-            const responseElement = document.createElement('html')
-            responseElement.outerHTML = xhr.responseText
-            const responseScriptTags = responseElement.querySelectorAll('body>script')
-            if (responseScriptTags) {
-              for (let i = responseScriptTags.length - 1; i >= 0; i--) {
-                const responseScriptTag = responseScriptTags.item(i)
-                try {
-                  const scriptTagContent = responseScriptTag.textContent
-                  if (scriptTagContent &&
-                        scriptTagContent.startsWith('renderError({') &&
-                        scriptTagContent.endsWith('})')) {
-                    error = JSON.parse(scriptTagContent.slice(12, scriptTagContent.length - 1))
-                  }
-                } catch (e) {
-                  call.error(e)
-                }
-              }
-            }
-          } else error = JSON.parse(xhr.responseText)
+    if (methodAcceptsContent && contentType) {
+      xhr.setRequestHeader('Content-Type', contentType)
+      if (typeof data === 'object') {
+        if (contentType === 'application/json') {
+          data = JSON.stringify(data)
+        } else if (contentType === 'application/x-www-form-urlencoded') {
+          data = new URLSearchParams(data).toString()
         }
-      } catch (e) {
-        call.error(e)
-      }
-
-      if (!error) error = { status: xhr.status }
-
-      error.reload = this.#reload
-      stream.next({
-        request: { url, method, data, contentType },
-        stop: true,
-        error
-      })
-    }
-
-    const handleServerResponse = () => {
-      let response
-      try {
-        const { responseText } = xhr
-        if (responseContentType === 'application/json') { response = JSON.parse(responseText) } else if (responseContentType === 'text/html') {
-          const responseElement = document.createElement('html')
-          responseElement.outerHTML = xhr.responseText
-          response = responseElement
-        }
-
-        call.next(response)
-        broadcast(response)
-
-        stream.next({
-          xhr,
-          request: { url, method, data, contentType },
-          stop: true
-        })
-      } catch (e) {
-        call.error(e)
-        stream.next({
-          xhr,
-          request: { url, method, data, contentType },
-          error: {
-            message: 'An internal error has occurred.',
-            severe: true,
-            reload: this.#reload
-          },
-          stop: true
-        })
       }
     }
 
@@ -148,8 +160,8 @@ export class RestClient {
           break
 
         case 4:
-          if (xhr.status >= 400) handleServerError()
-          else handleServerResponse()
+          if (xhr.status >= 400) this.#handleServerError(xhr, call, request)
+          else this.#handleServerResponse(xhr, call, request, responseContentType)
 
           call.complete()
 
@@ -159,7 +171,7 @@ export class RestClient {
 
     stream.next({
       xhr,
-      request: { url, method, data, contentType },
+      request,
       start: true
     })
 
