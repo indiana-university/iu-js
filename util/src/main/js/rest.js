@@ -95,7 +95,7 @@ export class RestClient {
         const responseElement = document.createElement('html')
         responseElement.outerHTML = xhr.responseText
         response = responseElement
-      }
+      } else response = responseText
 
       call.next(response)
       broadcast(response)
