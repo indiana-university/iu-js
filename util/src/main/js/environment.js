@@ -70,9 +70,10 @@ export function setParam (name, value) {
 }
 
 export function createSearchParams (params) {
-  const query = {}
-  copyChanges(query, params)
-  copyChanges(query, environment.authParams)
+  const query = { ...params }
+  for (const n in environment.authParams) {
+    query[n] = environment.authParams[n]
+  }
   if (Object.keys(query).length === 0) return null
   else return new URLSearchParams(query)
 }
