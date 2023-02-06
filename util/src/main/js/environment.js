@@ -42,7 +42,10 @@ export function init (env) {
   const a = {}
   for (const n in env) {
     if (n === 'authParams') {
-      copyChanges(environment.authParams, env.authParams)
+      const { authParams } = env
+      for (const o in authParams) {
+        environment.authParams[o] = authParams[o]
+      }
     } else if (Object.prototype.hasOwnProperty.call(environment, n)) {
       environment[n] = env[n]
     } else {
