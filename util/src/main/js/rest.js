@@ -154,7 +154,10 @@ export class RestClient {
         case 2:
           xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(h => {
             if (h.toLowerCase().indexOf('content-type: ') === 0) {
-              responseContentType = h.substring(14)
+              let t = h.substring(14)
+              const i = t.indexOf(';')
+              if (i !== -1) t = t.substring(0, i)
+              responseContentType = t
             }
           })
           break
