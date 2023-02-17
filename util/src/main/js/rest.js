@@ -89,16 +89,18 @@ export class RestClient {
     let response
     try {
       const { responseText } = xhr
-      if (responseContentType === 'application/json') {
-        response = JSON.parse(responseText)
-      } else if (responseContentType === 'text/html') {
-        const responseElement = document.createElement('html')
-        responseElement.outerHTML = xhr.responseText
-        response = responseElement
-      } else response = responseText
+      if (responseText) {
+        if (responseContentType === 'application/json') {
+          response = JSON.parse(responseText)
+        } else if (responseContentType === 'text/html') {
+          const responseElement = document.createElement('html')
+          responseElement.outerHTML = xhr.responseText
+          response = responseElement
+        } else response = responseText
 
-      call.next(response)
-      broadcast(response)
+        call.next(response)
+        broadcast(response)
+      }
 
       stream.next({
         xhr,
