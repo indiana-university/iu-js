@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>iu-js-parent</artifactId>
-	<version>0.7.1-SNAPSHOT</version>
+	<version>0.7.1</version>
 
 	<name>IU JavaScript Parent</name>
 	<packaging>pom</packaging>
