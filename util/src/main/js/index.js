@@ -34,16 +34,6 @@ import * as rivet from './rivet'
 import * as rest from './rest'
 import * as websocket from './websocket'
 
-if (window.Rivet) {
-  const rivetEventListener = a => {
-    if (a.start) rivet.showLoadingIndicator()
-    if (a.stop) rivet.hideLoadingIndicator()
-    if (a.error) rivet.openErrorModal(a.error)
-  }
-  rest.subscribe(rivetEventListener)
-  websocket.subscribe(rivetEventListener)
-}
-
 export default window.iu = {
   EventStream, util, environment, rivet, rest, websocket
 }
