@@ -122,6 +122,16 @@ export class RestClient {
     }
   }
 
+  #createSearchParams(data) {
+     const params = {}
+     for(const n in data){
+         if(data[n] !== null) {
+             params[n] = data[n]
+         }
+     }
+     return new URLSearchParams(params)
+  }
+
   send (method, data, contentType) {
     const xhr = new XMLHttpRequest()
     const call = new EventStream()
@@ -129,7 +139,7 @@ export class RestClient {
 
     let url = this.#url
     if (data && !methodAcceptsContent) {
-      const searchData = new URLSearchParams(data)
+      const searchData = this.#createSearchParams(data)
       if (url.search) url = new URL(url + '&' + searchData)
       else url = new URL(url + '?' + searchData)
       data = null
@@ -145,7 +155,7 @@ export class RestClient {
         if (contentType === 'application/json') {
           data = JSON.stringify(data)
         } else if (contentType === 'application/x-www-form-urlencoded') {
-          data = new URLSearchParams(data).toString()
+          data = this.#createSearchParams(data).toString()
         }
       }
     }
