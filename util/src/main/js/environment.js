@@ -28,12 +28,17 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 import EventStream from './EventStream'
-import { shortuid, copyChanges } from './util'
+import { shortuid } from './util'
+import * as rivet from './rivet'
+import * as rest from './rest'
+import * as websocket from './websocket'
 
 const environment = {
   applicationUrl: null,
   nodeId: shortuid(),
-  authParams: {}
+  authParams: {},
+  rivetErrorDialog: true,
+  rivetLoadingIndicator: true
 }
 
 const stream = new EventStream()
@@ -51,6 +56,19 @@ export function init (env) {
     } else {
       a[n] = env[n]
     }
+  }
+
+  const { rivetErrorDialog, rivetLoadingIndicator } = environment
+  if (window.Rivet && (rivetErrorDialog || rivetLoadingIndicator)) {
+    const rivetEventListener = a => {
+      if (rivetLoadingIndicator) {
+        if (a.start) rivet.showLoadingIndicator()
+        if (a.stop) rivet.hideLoadingIndicator()
+      }
+      if (rivetErrorDialog && a.error) rivet.openErrorModal(a.error)
+    }
+    rest.subscribe(rivetEventListener)
+    websocket.subscribe(rivetEventListener)
   }
 
   stream.next(a)
