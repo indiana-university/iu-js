@@ -4,12 +4,13 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>edu.iu.util</groupId>
-		<artifactId>iu-parent</artifactId>
-		<version>7.0.0</version>
+		<groupId>edu.iu</groupId>
+		<artifactId>iu-java-parent</artifactId>
+		<version>7.0.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
+	<groupId>edu.iu</groupId>
 	<artifactId>iu-js-parent</artifactId>
 	<version>0.7.3-SNAPSHOT</version>
 
@@ -56,15 +57,15 @@
 	</build>
 
 	<profiles>
-                <profile>
-                        <id>iu-default</id>
-                        <activation>
-                                <activeByDefault>true</activeByDefault>
-                        </activation>
-                        <modules>
-                                <module>util</module>
-                        </modules>
-                </profile>
+		<profile>
+			<id>iu-default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>util</module>
+			</modules>
+		</profile>
 	</profiles>
 
 
