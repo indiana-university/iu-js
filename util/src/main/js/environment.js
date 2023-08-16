@@ -27,11 +27,9 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import EventStream from './EventStream'
 import { shortuid } from './util'
 import * as rivet from './rivet'
-import * as rest from './rest'
-import * as websocket from './websocket'
+import { listen } from './endpoint'
 
 const environment = {
   applicationUrl: null,
@@ -40,8 +38,6 @@ const environment = {
   rivetErrorDialog: true,
   rivetLoadingIndicator: true
 }
-
-const stream = new EventStream()
 
 export function init (env) {
   const a = {}
@@ -58,20 +54,17 @@ export function init (env) {
     }
   }
 
-  const { rivetErrorDialog, rivetLoadingIndicator } = environment
-  if (window.Rivet && (rivetErrorDialog || rivetLoadingIndicator)) {
-    const rivetEventListener = a => {
-      if (rivetLoadingIndicator) {
-        if (a.start) rivet.showLoadingIndicator()
-        if (a.stop) rivet.hideLoadingIndicator()
-      }
-      if (rivetErrorDialog && a.error) rivet.openErrorModal(a.error)
+  if (window.Rivet) {
+    if (environment.rivetErrorDialog) {
+      listen('error', rivet.openErrorDialog)
     }
-    rest.subscribe(rivetEventListener)
-    websocket.subscribe(rivetEventListener)
+    if (environment.rivetLoadingIndicator) {
+      listen('loading', a => {
+        if (a) rivet.showLoadingIndicator()
+        else rivet.hideLoadingIndicator()
+      })
+    }
   }
-
-  stream.next(a)
 }
 
 export function getNodeId () {
@@ -121,12 +114,4 @@ export function popup (url, params, absolute) {
 
 export function navigateTo (url, params, absolute) {
   window.location = getUrl(url, params, absolute)
-}
-
-export function subscribe (s) {
-  return stream.subscribe(s)
-}
-
-export function broadcast (a) {
-  stream.next(a)
 }

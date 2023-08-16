@@ -433,7 +433,7 @@ export function renderErrorSection (props) {
   return errorMain
 }
 
-export function openErrorModal (data, reload) {
+export function openErrorDialog (data, reload) {
   const activeElement = document.activeElement
   const body = document.querySelector('body')
   // const scopeWrapper = document.createElement('div')

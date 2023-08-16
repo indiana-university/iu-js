@@ -27,13 +27,15 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import * as util from './util'
-import * as environment from './environment'
-import * as endpoint from './endpoint'
-import * as rivet from './rivet'
-import * as rest from './rest'
-import * as websocket from './websocket'
+const subscribers = new Set()
 
-export default window.iu = {
-  util, environment, endpoint, rivet, rest, websocket
+export function broadcast (data) {
+  subscribers.forEach(subscriber => subscriber.receive(data))
+}
+
+export function subscribe (subscriber) {
+  if (typeof subscriber !== 'function') {
+    throw new Error('Invalid subscriber, expected function')
+  }
+  return () => subscribers.delete(subscriber)
 }

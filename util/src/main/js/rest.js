@@ -28,14 +28,8 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /* globals XMLHttpRequest */
-import { getUrl, broadcast } from './environment'
-import EventStream from './EventStream'
-
-const stream = new EventStream()
-
-export function subscribe (s) {
-  stream.subscribe(s)
-}
+import { getUrl } from './environment'
+import { broadcast } from './global'
 
 export class RestClient {
   #url
@@ -46,8 +40,9 @@ export class RestClient {
     this.#reload = !!reload
   }
 
-  #handleServerError (xhr, call, request) {
+  #handleServerError (xhr) {
     let error
+
     try {
       if (xhr.responseText) {
         if (xhr.responseText.indexOf('<html') !== -1) {
@@ -57,38 +52,38 @@ export class RestClient {
           if (responseScriptTags) {
             for (let i = responseScriptTags.length - 1; i >= 0; i--) {
               const responseScriptTag = responseScriptTags.item(i)
-              try {
-                const scriptTagContent = responseScriptTag.textContent
-                if (scriptTagContent &&
+              const scriptTagContent = responseScriptTag.textContent
+              if (scriptTagContent &&
                       scriptTagContent.startsWith('renderError({') &&
                       scriptTagContent.endsWith('})')) {
-                  error = JSON.parse(scriptTagContent.slice(12, scriptTagContent.length - 1))
-                }
-              } catch (e) {
-                call.error(e)
+                error = JSON.parse(scriptTagContent.slice(12, scriptTagContent.length - 1))
               }
             }
           }
         } else error = JSON.parse(xhr.responseText)
       }
     } catch (e) {
-      call.error(e)
+      console.log(e)
+      error = {
+        message: 'An invalid error response was received from the server.',
+        status: xhr.status,
+        severe: true
+      }
     }
 
     if (!error) error = { status: xhr.status }
-
     error.reload = this.#reload
-    stream.next({
-      request,
-      stop: true,
-      error
-    })
+
+    broadcast({ type: 'error', message: error })
+
+    return error
   }
 
-  #handleServerResponse (xhr, call, request, responseContentType) {
-    let response
+  #handleServerResponse (xhr, responseContentType) {
     try {
       const { responseText } = xhr
+
+      let response
       if (responseText) {
         if (responseContentType === 'application/json') {
           response = JSON.parse(responseText)
@@ -98,43 +93,47 @@ export class RestClient {
           response = responseElement
         } else response = responseText
 
-        call.next(response)
-        broadcast(response)
-      }
-
-      stream.next({
-        xhr,
-        request,
-        stop: true
-      })
-    } catch (e) {
-      call.error(e)
-      stream.next({
-        xhr,
-        request,
-        error: {
-          message: 'An internal error has occurred.',
+        return { response }
+      } else {
+        console.log(xhr.response)
+        const error = {
+          message: 'No response was received from the server.',
+          status: xhr.status,
           severe: true,
           reload: this.#reload
-        },
-        stop: true
-      })
+        }
+        broadcast({ type: 'error', message: error })
+
+        return { error }
+      }
+    } catch (e) {
+      console.log(e)
+
+      const error = {
+        message: 'An invalid response was received from the server.',
+        status: xhr.status,
+        severe: true,
+        reload: this.#reload
+      }
+
+      broadcast({ type: 'error', message: error })
+
+      return { error }
     }
   }
 
-  #createSearchParams(data) {
-     const params = {}
-     for(const n in data){
-         if(data[n] !== null) {
-             params[n] = data[n]
-         }
-     }
-     return new URLSearchParams(params)
+  #createSearchParams (data) {
+    const params = {}
+    for (const n in data) {
+      if (data[n] !== null) {
+        params[n] = data[n]
+      }
+    }
+    return new URLSearchParams(params)
   }
 
   send (method, data, contentType) {
     const xhr = new XMLHttpRequest()
-    const call = new EventStream()
     const methodAcceptsContent = method === 'POST' || method === 'PUT' || method === 'PATCH'
 
     let url = this.#url
@@ -160,7 +159,7 @@ export class RestClient {
       }
     }
 
-    let responseContentType
+    let responseContentType, handleResponse, handleError
     xhr.onreadystatechange = () => {
       switch (xhr.readyState) {
         case 2:
@@ -175,23 +174,39 @@ export class RestClient {
           break
 
         case 4:
-          if (xhr.status >= 400) this.#handleServerError(xhr, call, request)
-          else this.#handleServerResponse(xhr, call, request, responseContentType)
-
-          call.complete()
+          broadcast('loading', false)
+          if (xhr.status >= 400) {
+            const error = this.#handleServerError(xhr)
+            broadcast('error', error)
+            handleError(error)
+          } else {
+            const { response, error } = this.#handleServerResponse(xhr, responseContentType)
+            broadcast({
+              type: 'rest',
+              message: {
+                xhr,
+                request,
+                responseContentType,
+                response,
+                error
+              }
+            })
+            if (typeof response === 'object' && response.type && response.message) {
+              broadcast(response)
+            }
+            if (response) handleResponse(response)
+            else handleError(error)
+          }
 
           break
       }
     }
 
-    stream.next({
-      xhr,
-      request,
-      start: true
+    return new Promise((resolve, reject) => {
+      handleResponse = resolve
+      handleError = reject
+      xhr.send(data)
     })
-
-    xhr.send(data)
-    return call
   }
 
   get (data, contentType, reload = false) {
