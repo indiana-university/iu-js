@@ -25,10 +25,6 @@ afterEach(() => {
   if (server) server.close()
 })
 
-test('use jsdom and set the URL in this test file', () => {
-  expect(window.location.href).toBe('http://localhost:8707/')
-})
-
 test('get returns foobar', async () => {
   await expect(rest.ajaxGet('echo', { v: 'foobar' })).resolves.toBe('foobar')
 })

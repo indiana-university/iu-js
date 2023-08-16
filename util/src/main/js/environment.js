@@ -29,7 +29,7 @@
 */
 import { shortuid } from './util'
 import * as rivet from './rivet'
-import { listen } from './endpoint'
+import { listen } from './message'
 
 const environment = {
   applicationUrl: null,

@@ -27,24 +27,31 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/**
- * The global module implements simple broadcast/subscribe functionality in support
- * of other server interaction modules.
- */
+import { test, expect } from '@jest/globals'
+import { broadcast, subscribe } from './global'
 
-/**
- *
- */
-const subscribers = new Set()
+test('subscribe fails without a function', () => {
+  expect(() => subscribe()).toThrow()
+})
 
-export function broadcast (data) {
-  subscribers.forEach(subscriber => subscriber(data))
-}
+test('subscriber receives broadcast message', async () => {
+  await expect(new Promise((resolve, reject) => {
+    subscribe(resolve)
+    broadcast('foobar')
+  })).resolves.toBe('foobar')
+})
 
-export function subscribe (subscriber) {
-  if (typeof subscriber !== 'function') {
-    throw new Error('Invalid subscriber, expected function')
-  }
-  subscribers.add(subscriber)
-  return () => subscribers.delete(subscriber)
-}
+test('unsubscribe doesn\'t receive broadcast message', async () => {
+  await expect(new Promise((resolve, reject) => {
+    let subscribed = true
+    const unsubscribe = subscribe(a => {
+      if (subscribed) expect(a).toBe('foo')
+      else reject(a)
+    })
+    broadcast('foo')
+    unsubscribe()
+    subscribed = false
+    broadcast('bar')
+    resolve(true)
+  })).resolves.toBe(true)
+})

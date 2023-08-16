@@ -60,19 +60,31 @@ class MessageEndpoint {
 class Index {
   #active = new Map()
 
+  constructor () {
+    subscribe(data => {
+      const { type, message, remote } = data
+      if (!type || typeof type !== 'string') return
+
+      const messageEndpoint = this.#active.get(type)
+      if (!messageEndpoint) return
+
+      messageEndpoint.receive(message, remote)
+    })
+  }
+
   prune (type) {
     this.#active.delete(type)
   }
 
-  get (type, create) {
+  get (type) {
     if (!type || typeof type !== 'string') {
       throw new Error('Missing or invalid type')
     }
 
     let messageEndpoint = this.#active.get(type)
-    if (!messageEndpoint && create) {
+    if (!messageEndpoint) {
       messageEndpoint = new MessageEndpoint(type)
-      this.#active.put(type, messageEndpoint)
+      this.#active.set(type, messageEndpoint)
     }
     return messageEndpoint
   }
@@ -80,18 +92,8 @@ class Index {
 
 const index = new Index()
 
-subscribe(data => {
-  const { type, message, remote } = data
-  if (!type) return
-
-  const messageEndpoint = index.get(type)
-  if (!messageEndpoint) return
-
-  messageEndpoint.receive(message, remote)
-})
-
 export function listen (type, listener) {
-  const messageEndpoint = index.get(type, true)
+  const messageEndpoint = index.get(type)
   const stop = messageEndpoint.listen(listener)
   return () => {
     if (stop()) index.prune(type)

@@ -95,16 +95,18 @@ export class RestClient {
 
         return { response }
       } else {
-        console.log(xhr.response)
-        const error = {
-          message: 'No response was received from the server.',
-          status: xhr.status,
-          severe: true,
-          reload: this.#reload
+        if (xhr.status === 200) {
+          const error = {
+            message: 'No response was received from the server.',
+            status: xhr.status,
+            severe: true,
+            reload: this.#reload
+          }
+          broadcast({ type: 'error', message: error })
+          return { error }
+        } else {
+          return {}
         }
-        broadcast({ type: 'error', message: error })
-
-        return { error }
       }
     } catch (e) {
       console.log(e)
@@ -159,10 +161,11 @@ export class RestClient {
       }
     }
 
-    let responseContentType, handleResponse, handleError
+    let responseContentType
+    let resolvePromise, rejectPromise // assigned when promise is created
     xhr.onreadystatechange = () => {
       switch (xhr.readyState) {
-        case 2:
+        case XMLHttpRequest.HEADERS_RECEIVED:
           xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(h => {
             if (h.toLowerCase().indexOf('content-type: ') === 0) {
               let t = h.substring(14)
@@ -173,29 +176,37 @@ export class RestClient {
           })
           break
 
-        case 4:
+        case XMLHttpRequest.DONE:
           broadcast('loading', false)
+
           if (xhr.status >= 400) {
             const error = this.#handleServerError(xhr)
             broadcast('error', error)
-            handleError(error)
+            rejectPromise(error)
           } else {
             const { response, error } = this.#handleServerResponse(xhr, responseContentType)
+            const responseMessage = {
+              xhr,
+              request,
+              responseContentType,
+              response,
+              error
+            }
+
             broadcast({
               type: 'rest',
-              message: {
-                xhr,
-                request,
-                responseContentType,
-                response,
-                error
-              }
+              message: responseMessage
             })
+
+            if (error) {
+              rejectPromise(error)
+            } else {
+              resolvePromise(responseMessage)
+            }
+
             if (typeof response === 'object' && response.type && response.message) {
               broadcast(response)
             }
-            if (response) handleResponse(response)
-            else handleError(error)
           }
 
           break
@@ -203,8 +214,9 @@ export class RestClient {
     }
 
     return new Promise((resolve, reject) => {
-      handleResponse = resolve
-      handleError = reject
+      resolvePromise = resolve
+      rejectPromise = reject
+      broadcast('loading', true)
       xhr.send(data)
     })
   }

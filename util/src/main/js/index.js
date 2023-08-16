@@ -29,7 +29,7 @@
 */
 import * as util from './util'
 import * as environment from './environment'
-import * as endpoint from './endpoint'
+import * as endpoint from './message'
 import * as rivet from './rivet'
 import * as rest from './rest'
 import * as websocket from './websocket'

@@ -149,6 +149,7 @@ class WebSocketClient {
           this.#handleStatus(s.message)
         } else if (s.type === 'SocketReconnect') {
           const { nonce } = s.message
+          // TODO is this verified??
           if (this.#reconnectNonces.indexOf(nonce) === -1) {
             this.#reconnectNonces.push(nonce)
             this.#connect()
