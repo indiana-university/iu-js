@@ -1,11 +1,10 @@
 /**
  * @jest-environment jsdom
- * @jest-environment-options {"url" : "http://localhost:8707/"}
  */
 import { beforeEach, afterEach, test, expect } from '@jest/globals'
 import express from 'express'
 import http from 'http'
-import * as environment from './environment'
+import environment from './environment'
 import * as rest from './rest'
 
 let server
@@ -18,7 +17,7 @@ beforeEach(() => {
   server = http.createServer(app)
   server.listen(8707)
 
-  environment.init({ applicationUrl: 'http://localhost:8707/' })
+  environment.init({ url: 'http://localhost:8707/', username: 'iu-user' })
 })
 
 afterEach(() => {

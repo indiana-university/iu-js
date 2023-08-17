@@ -27,48 +27,9 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+const max = Math.pow(36, 7)
+const mod = Math.pow(36, 3)
 
-export function shortuid () {
-  const m = Date.now() % 4194304
-  const r = Math.floor(Math.random() * 12582911) + 4194304
-  return (m + r).toString(36)
-}
-
-export function hasChanged (a, b) {
-  if (a === b || (typeof b === 'undefined')) {
-    return false
-  } else if ((a === null && b !== null) || (a !== null && b === null)) {
-    return true
-  } else if (Array.isArray(a)) {
-    if (!Array.isArray(b)) {
-      return true
-    }
-    if (a.length !== b.length) {
-      return true
-    }
-    for (const i in a) {
-      if (hasChanged(a[i], b[i])) return true
-    }
-    return false
-  } else if (typeof a === 'object') {
-    if (typeof b !== 'object') return true
-    for (const i in a) {
-      if (hasChanged(a[i], b[i])) return true
-    }
-    return false
-  } else return true
-}
-
-export function copyChanges (a, b) {
-  if (a === b) return true // special case, for initialization
-  let changed = false
-  if (b) {
-    for (const i in a) {
-      if (hasChanged(a[i], b[i])) {
-        a[i] = b[i]
-        changed = true
-      }
-    }
-  }
-  return changed
+export default function shortuid () {
+  return Math.abs(Math.floor(Math.random() * max) + Date.now() % mod).toString(36)
 }

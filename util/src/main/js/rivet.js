@@ -27,7 +27,7 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import { shortuid } from './util'
+import { shortuid } from './shortuid'
 
 const statusCodes = {
   100: 'Continue',
@@ -222,24 +222,25 @@ function getFocusableElements (element) {
   return enabledFocusable
 }
 
-let loading = document.getElementById('loading')
-if (!loading && document.body) {
-  loading = document.createElement('div')
-  loading.setAttribute('id', 'loading')
-  loading.style.position = 'fixed'
-  loading.style.display = 'none'
-  loading.setAttribute('class', 'rvt-loader rvt-loader--sm')
-  loading.style.top = '5.5rem'
-  loading.style.right = '0.5rem'
-  document.body.appendChild(loading)
-}
-
 export function showLoadingIndicator () {
+  let loading = document.getElementById('loading')
+  if (!loading && document.body) {
+    loading = document.createElement('div')
+    loading.setAttribute('id', 'loading')
+    loading.style.position = 'fixed'
+    loading.style.display = 'none'
+    loading.setAttribute('class', 'rvt-loader rvt-loader--sm')
+    loading.style.top = '5.5rem'
+    loading.style.right = '0.5rem'
+    document.body.appendChild(loading)
+  }
+
   loading.style.display = 'block'
 }
 
 export function hideLoadingIndicator () {
-  loading.style.display = 'none'
+  const loading = document.getElementById('loading')
+  if (loading) loading.style.display = 'none'
 }
 
 export function renderErrorSection (props) {
