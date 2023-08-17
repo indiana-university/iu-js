@@ -27,14 +27,43 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import * as util from './util'
-import * as environment from './environment'
-import * as message from './message'
-import * as observer from './observer'
-import * as rivet from './rivet'
-import * as rest from './rest'
-import * as websocket from './websocket'
+class Observer {
+  #watchers = new Set()
 
-export default window.iu = {
-  util, observer, environment, endpoint, rivet, rest, websocket
+  watch (onNotify) {
+    if (!onNotify) throw new Error('Missing onNotify')
+    if (typeof onNotify !== 'function') {
+      throw new Error('Invalid onNotify, expected Function')
+    }
+
+    this.#watchers.add(onNotify)
+    return () => this.#watchers.delete(onNotify)
+  }
+
+  notify () {
+    this.#watchers.forEach(onNotify => onNotify())
+  }
+}
+
+const observers = new WeakMap()
+
+function observe (subject) {
+  if (!subject) throw new Error('Missing target')
+  else if (typeof subject !== 'object') throw new Error('Invalid subject, expected Object')
+
+  let observer = observers.get(subject)
+  if (!observer) {
+    observer = new Observer()
+    observers.set(subject, observer)
+  }
+
+  return observer
+}
+
+export function watch (subject, onNotify) {
+  return observe(subject).watch(onNotify)
+}
+
+export function notify (subject) {
+  observe(subject).notify()
 }
