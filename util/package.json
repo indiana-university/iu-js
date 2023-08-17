@@ -1,7 +1,7 @@
 {
     "name": "iu-js-util",
     "description": "IU JavaScript Utilities",
-    "version": "0.7.0",
+    "version": "0.7.3",
     "private": false,
     "repository": {
         "url": "git@github.com:indiana-university/iu-js.git"

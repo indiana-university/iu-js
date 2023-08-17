@@ -4,12 +4,13 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>edu.iu.util</groupId>
-		<artifactId>iu-parent</artifactId>
-		<version>7.0.0</version>
+		<groupId>edu.iu</groupId>
+		<artifactId>iu-java-parent</artifactId>
+		<version>7.0.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
+	<groupId>edu.iu</groupId>
 	<artifactId>iu-js-parent</artifactId>
 	<version>0.7.3-SNAPSHOT</version>
 
@@ -28,10 +29,10 @@
 				<plugin>
 					<groupId>com.github.eirslett</groupId>
 					<artifactId>frontend-maven-plugin</artifactId>
-					<version>1.12.1</version>
+					<version>1.13.4</version>
 					<configuration>
-						<nodeVersion>v16.16.0</nodeVersion>
-						<npmVersion>8.11.0</npmVersion>
+						<nodeVersion>v18.17.1</nodeVersion>
+						<npmVersion>9.6.7</npmVersion>
 						<installDirectory>${project.build.directory}/js</installDirectory>
 					</configuration>
 					<executions>
@@ -56,15 +57,15 @@
 	</build>
 
 	<profiles>
-                <profile>
-                        <id>iu-default</id>
-                        <activation>
-                                <activeByDefault>true</activeByDefault>
-                        </activation>
-                        <modules>
-                                <module>util</module>
-                        </modules>
-                </profile>
+		<profile>
+			<id>iu-default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<modules>
+				<module>util</module>
+			</modules>
+		</profile>
 	</profiles>
 
 
