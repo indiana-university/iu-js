@@ -1,5 +1,5 @@
 import { test, expect } from '@jest/globals'
-import hex from './hex'
+import hex from 'hex'
 
 const foobar = [102, 111, 111, 98, 97, 114, 10]
 
