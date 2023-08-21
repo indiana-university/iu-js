@@ -27,24 +27,63 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/**
- * The global module implements simple broadcast/subscribe functionality in support
- * of other server interaction modules.
- */
+function encode (byte) {
+  if (byte < 0 || byte > 255) {
+    throw new RangeError('Expected byte (0-255)')
+  }
 
-/**
- *
- */
-const subscribers = new Set()
-
-export function broadcast (data) {
-  subscribers.forEach(subscriber => subscriber(data))
+  if (byte < 16) {
+    return '0' + byte.toString(16)
+  } else {
+    return byte.toString(16)
+  }
 }
 
-export function subscribe (subscriber) {
-  if (typeof subscriber !== 'function') {
-    throw new Error('Invalid subscriber, expected function')
+function isHex (byte) {
+  return (
+    (byte >= 48 && byte <= 57) || // '0' through '9'
+    (byte >= 65 && byte <= 70) || // 'A' through 'F'
+    (byte >= 97 && byte <= 102) // 'a' through 'f'
+  )
+}
+
+function decode (encodedByte) {
+  if (!isHex(encodedByte.charCodeAt(0)) || !isHex(encodedByte.charCodeAt(1))) {
+    throw new RangeError('Expected encoded byte (00-ff)')
   }
-  subscribers.add(subscriber)
-  return () => subscribers.delete(subscriber)
+  return Number.parseInt(encodedByte, 16)
+}
+
+/**
+ * Converts between binary and hex encoded data
+ *
+ * @param data String to decode or Uint8Array to encode
+ * @returns Decoded Uint8Array or encoded String
+ */
+export default function (data) {
+  if (typeof data === 'number') {
+    return encode(data)
+  }
+
+  if (ArrayBuffer.isView(data)) {
+    let encoded = ''
+    for (const byte of data) {
+      encoded += encode(byte)
+    }
+    return encoded
+  }
+
+  if (typeof data === 'string') {
+    if (data.length % 2 === 1) {
+      throw new TypeError('Length must be even')
+    }
+
+    const decoded = []
+    for (let i = 0; i < data.length; i += 2) {
+      decoded.push(decode(data.substring(i, i + 2)))
+    }
+    return new Uint8Array(decoded)
+  }
+
+  throw new TypeError('Expected String to decode or BufferSource to encode')
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (c), 2022 Indiana University
+  Copyright (c), 2023 Indiana University
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -27,9 +27,23 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-const max = Math.pow(36, 7)
-const mod = Math.pow(36, 3)
+const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
 
-export default function shortuid () {
-  return Math.abs(Math.floor(Math.random() * max) + Date.now() % mod).toString(36)
+/**
+ * Converts a string to UTF-8 encoded binary, or UTF-8 encoded binary to a string.
+ *
+ * @param data String, or Uint8Array
+ * @returns Uint8Array, or String
+ */
+export default function (data) {
+  if ((data instanceof ArrayBuffer) || ArrayBuffer.isView(data)) {
+    return textDecoder.decode(data)
+  }
+
+  if (typeof data === 'string') {
+    return textEncoder.encode(data)
+  }
+
+  throw new TypeError('Expected String or TypedArray')
 }

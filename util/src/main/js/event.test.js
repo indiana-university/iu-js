@@ -28,30 +28,30 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 import { test, expect } from '@jest/globals'
-import { broadcast, subscribe } from './global'
+import { init, subscribe } from './event'
+import environment from './environment'
 
-test('subscribe fails without a function', () => {
+test('subscribe must pass functions', () => {
   expect(() => subscribe()).toThrow()
+  expect(() => subscribe('foo', () => 'bar')).toThrow()
+  expect(() => subscribe(a => {}, 'bar')).toThrow()
 })
 
-test('subscriber receives broadcast message', async () => {
-  await expect(new Promise((resolve, reject) => {
-    subscribe(resolve)
-    broadcast('foobar')
-  })).resolves.toBe('foobar')
+test('init only works from environment', () => {
+  expect(() => init()).toThrow()
+  const destroy = environment.init({ url: 'http://iu-js.server/', username: 'iu-user' })
+  try {
+    expect(init).toThrow()
+  } finally {
+    destroy()
+  }
+  expect(() => init('foobar')).toThrow()
 })
 
-test('unsubscribe doesn\'t receive broadcast message', async () => {
-  await expect(new Promise((resolve, reject) => {
-    let subscribed = true
-    const unsubscribe = subscribe(a => {
-      if (subscribed) expect(a).toBe('foo')
-      else reject(a)
-    })
-    broadcast('foo')
-    unsubscribe()
-    subscribed = false
-    broadcast('bar')
-    resolve(true)
-  })).resolves.toBe(true)
+test('subscribe only works before init', () => {
+  expect(() => subscribe()).toThrow()
+  subscribe(() => {})
+  const destroy = environment.init({ url: 'http://iu-js.server/', username: 'iu-user' })
+  expect(() => subscribe(() => {})).toThrow()
+  destroy()
 })

@@ -1,5 +1,5 @@
 /*
-  Copyright (c), 2022 Indiana University
+  Copyright (c), 2023 Indiana University
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import { shortuid } from './shortuid'
+import { short } from './id'
 
 const statusCodes = {
   100: 'Continue',
@@ -136,7 +136,7 @@ function getIcon (statusCode, size) {
 }
 
 function labelValue (label, value) {
-  const id = shortuid()
+  const id = short()
   const e = document.createElement('div')
   e.setAttribute('class', 'rvt-row rvt-m-lr-xxs')
 
@@ -157,10 +157,14 @@ function labelValue (label, value) {
   return e
 }
 
-function handleModalCloseReload (e) {
+function handleModalCloseReload (e, location) {
   e.stopPropagation()
   e.preventDefault()
-  window.location.reload()
+  if (typeof location === 'string') {
+    window.location.replace(location)
+  } else {
+    window.location.reload()
+  }
 }
 
 function handleModalClose (activeElement, dialog, body) {
@@ -222,6 +226,11 @@ function getFocusableElements (element) {
   return enabledFocusable
 }
 
+/**
+ * Shows the element with id 'loading'. If not already present, and the
+ * document has a body element, a small rivet loader fixed in the top
+ * right corner of the page will be appended.
+ */
 export function showLoadingIndicator () {
   let loading = document.getElementById('loading')
   if (!loading && document.body) {
@@ -238,11 +247,39 @@ export function showLoadingIndicator () {
   loading.style.display = 'block'
 }
 
+/**
+ * Hides the element with id 'loading', if present within the document.
+ */
 export function hideLoadingIndicator () {
   const loading = document.getElementById('loading')
   if (loading) loading.style.display = 'none'
 }
 
+/**
+ * Generates a DOM element for inclusion on the page or within a dialog element
+ * that includes details about an application error.
+ *
+ * Accepts properties:
+ * - message: A human readable message describing the error
+ * - reload: If truthy, includes text advising the user to reload the page to
+ *           continue working. If true, clearing the error results in a full page
+ *           reload; may be a string represting the URL for returing the user to
+ *           the application entry point
+ * - modal: If truthy, renders as dialog content; else renders as full page content
+ * - status: HTTP status code, or Web Socket close reason code
+ * - severe: If truthy, indicates the error is the result of an application bug or
+ *           problem with the runtime environment; else the result of an invalid
+ *           action by the user
+ * - supportUrl: URL for creating a user support link when rendering a severe
+ *           error. Default is http://kb.iu.edu/data/abxl.html
+ * - supportLabel: Link text for the user support link when rendering a severe
+ *           error. Default is 'IU Support Center'
+ * - requestNumber: Unique identifier for tying to server-side application logs
+ * - nodeId: Unique identifier for the server node where the error occurred
+ *
+ * @param props Object containing properties
+ * @returns DOM element
+ */
 export function renderErrorSection (props) {
   const errorMain = document.createElement('div')
 
@@ -365,7 +402,7 @@ export function renderErrorSection (props) {
   }
 
   const errorContent = document.createElement('div')
-  errorContent.appendChild(labelValue('Current Time', new Date().toString()))
+  errorContent.appendChild(labelValue('Current Time', new Date().toLocaleString()))
   if (props.requestNumber) errorContent.appendChild(labelValue('Request #', props.requestNumber))
   if (props.nodeId) errorContent.appendChild(labelValue('Node', props.nodeId))
   if (props.modal) {
@@ -434,11 +471,15 @@ export function renderErrorSection (props) {
   return errorMain
 }
 
-export function openErrorDialog (data, reload) {
+/**
+ * Creates a Rivet dialog element with error details and appends to the document body.
+ *
+ * @param props Object containing properties with error details, see {@link renderErrorSection}
+ * @returns Dialog close function
+ */
+export function openErrorDialog (props) {
   const activeElement = document.activeElement
   const body = document.querySelector('body')
-  // const scopeWrapper = document.createElement('div')
-  // scopeWrapper.className = 'rvt-scope'
 
   const dialog = document.createElement('section')
   dialog.setAttribute('id', 'error-dialog')
@@ -453,25 +494,20 @@ export function openErrorDialog (data, reload) {
   dialog.setAttribute('tabindex', '-1')
   dialog.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      reload ? handleModalCloseReload(e) : handleModalClose(activeElement, dialog, body)
+      props.reload ? handleModalCloseReload(e, props.reload) : handleModalClose(activeElement, dialog, body)
     }
     if (e.key === 'Tab') {
       handleTab(e, dialog)
     }
   })
 
-  const props = {}
-  for (const n in data) props[n] = data[n]
-  props.modal = true
-  props.closeModal = (e) => {
-    if (reload) handleModalCloseReload(e)
+  const closeModal = (e) => {
+    if (props.reload) handleModalCloseReload(e, props.reload)
     else handleModalClose(activeElement, dialog, body)
   }
-  props.reload = reload
-  dialog.appendChild(renderErrorSection(props))
+  dialog.appendChild(renderErrorSection({ ...props, modal: true, closeModal }))
   dialog.style.display = 'block'
 
-  // scopeWrapper.appendChild(dialog)
   body.appendChild(dialog)
   dialog.focus()
 

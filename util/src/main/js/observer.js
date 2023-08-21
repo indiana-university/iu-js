@@ -48,7 +48,7 @@ class Observer {
 const observers = new WeakMap()
 
 function observe (subject) {
-  if (!subject) throw new Error('Missing target')
+  if (!subject) throw new Error('Missing subject')
   else if (typeof subject !== 'object') throw new Error('Invalid subject, expected Object')
 
   let observer = observers.get(subject)

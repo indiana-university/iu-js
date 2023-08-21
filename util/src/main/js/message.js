@@ -27,7 +27,7 @@
   OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-import { subscribe } from './global'
+import { subscribe } from './event'
 
 class MessageEndpoint {
   #last
@@ -63,12 +63,8 @@ class Index {
   constructor () {
     subscribe(data => {
       const { type, message, remote } = data
-      if (!type || typeof type !== 'string') return
-
       const messageEndpoint = this.#active.get(type)
-      if (!messageEndpoint) return
-
-      messageEndpoint.receive(message, remote)
+      if (messageEndpoint) messageEndpoint.receive(message, remote)
     })
   }
 
@@ -77,10 +73,6 @@ class Index {
   }
 
   get (type) {
-    if (!type || typeof type !== 'string') {
-      throw new Error('Missing or invalid type')
-    }
-
     let messageEndpoint = this.#active.get(type)
     if (!messageEndpoint) {
       messageEndpoint = new MessageEndpoint(type)
@@ -93,6 +85,10 @@ class Index {
 const index = new Index()
 
 export function listen (type, listener) {
+  if (!type || typeof type !== 'string') {
+    throw new Error('Missing or invalid type')
+  }
+
   const messageEndpoint = index.get(type)
   const stop = messageEndpoint.listen(listener)
   return () => {

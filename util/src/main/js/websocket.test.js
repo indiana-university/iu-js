@@ -3,16 +3,16 @@
  */
 import { beforeEach, afterEach, test, expect } from '@jest/globals'
 import WS from 'jest-websocket-mock'
-import * as environment from './environment'
+import environment from './environment'
 import * as websocket from './websocket'
 import { listen } from './message'
-import { shortuid } from './util'
+import shortuid from './shortuid'
 
 const remoteNodeId = shortuid()
 let server
 beforeEach(() => {
   server = new WS('ws://iu-js.server/test-sock')
-  environment.init({ applicationUrl: 'http://iu-js.server/' })
+  environment.init({ url: 'http://iu-js.server/', username: 'iu-user' })
 })
 
 afterEach(() => {

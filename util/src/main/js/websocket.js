@@ -28,9 +28,9 @@
   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 /* globals WebSocket */
-import { shortuid } from './util'
-import { getUrl, getNodeId } from './environment'
-import { broadcast } from './global'
+import shortuid from './shortuid'
+import environment from './environment'
+import { broadcast } from './event'
 
 const webSocketClients = {}
 let pingInterval = 300000
@@ -38,7 +38,7 @@ let pingInterval = 300000
 function handleError (message, status, severe = true, reload = severe) {
   broadcast({
     type: 'error',
-    message: { message, nodeId: getNodeId(), status, severe, reload }
+    message: { message, nodeId: environment.nodeId, status, severe, reload }
   })
 }
 
@@ -74,14 +74,14 @@ class WebSocketClient {
       const nonce = shortuid()
       this.#nonces.push(nonce)
       socket.send(JSON.stringify({
-        message: { clientId: this.#clientId, nodeId: getNodeId(), nonce },
+        message: { clientId: this.#clientId, nodeId: environment.nodeId, nonce },
         type: 'ClientPing'
       }))
     }
   }
 
   #handleServerPing (ping) {
-    if (ping.nodeId !== getNodeId()) {
+    if (ping.nodeId !== environment.nodeId) {
       handleError('An internal error has occurred (node mismatch).')
     } else if (ping.clientId !== this.#clientId) {
       handleError('An internal error has occurred (client ID mismatch).')
@@ -198,13 +198,13 @@ export function setPingInterval (i) {
   else throw new Error('Invalid ping interval')
 }
 
-export function open (url, absolute) {
-  const uri = getUrl(url, null, absolute).toString().replace(/^http/, 'ws')
+export function open (url) {
+  const uri = environment.getUrl(url).toString().replace(/^http/, 'ws')
   let socket = webSocketClients[uri]
   if (!socket) webSocketClients[uri] = socket = new WebSocketClient(uri)
   return socket
 }
 
-export function send (url, message, absolute) {
-  open(url, absolute).send(message)
+export function send (url, message) {
+  open(url).send(message)
 }
