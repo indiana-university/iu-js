@@ -1,11 +1,4 @@
-name: iu-js Ephemeral Branch
-
-on:
-  push:
-    branches: [ feature/* ]
-
-  workflow_dispatch:
-    on: push
+name: verify
 
 env:
   TZ: America/Indianapolis
