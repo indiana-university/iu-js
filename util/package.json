@@ -23,6 +23,7 @@
     },
     "dependencies": {},
     "scripts": {
-        "test": "jest --coverage"
+        "test": "jest --coverage",
+        "build": "webpack && webpack --config webpack-release.config.js"
     }
 }
