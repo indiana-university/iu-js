@@ -1,5 +1,7 @@
 name: verify
 
+on: push
+
 env:
   TZ: America/Indianapolis
 
