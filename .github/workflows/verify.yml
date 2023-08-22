@@ -11,6 +11,7 @@ jobs:
 
     steps:
     - uses: actions/cache@v3
+    - name: maven
       with:
         path: ~/.m2/repository
         key: m2_repository
