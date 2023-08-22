@@ -5,6 +5,7 @@ on:
     branches: [ feature/* ]
 
   workflow_dispatch:
+    on: push
 
 env:
   TZ: America/Indianapolis
