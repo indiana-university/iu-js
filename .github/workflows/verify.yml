@@ -12,8 +12,8 @@ jobs:
     steps:
     - uses: actions/cache@v3
       with:
-        path: |
-          ~/.m2/repository
+        path: ~/.m2/repository
+        key: m2_repository
 
     - uses: actions/checkout@v3
     - name: Set up JDK 17
