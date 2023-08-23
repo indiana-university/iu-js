@@ -2,7 +2,7 @@
 
 Provides a set of server interaction utilies for JavaScript projects that interact with IU's JEE implementation.
 
-## hex(data)
+## iu.hex(data)
 
 Converts between binary and hex encoded data
 
