@@ -43,24 +43,17 @@
 							<goal>npm</goal>
 						</goals>
 						<configuration>
-							<arguments>run test</arguments>
+							<arguments>test</arguments>
 						</configuration>
 					</execution>
 					<execution>
-						<id>js-package-dev</id>
+						<id>js-build</id>
 						<phase>prepare-package</phase>
 						<goals>
-							<goal>webpack</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>js-package-release</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>webpack</goal>
+							<goal>npm</goal>
 						</goals>
 						<configuration>
-							<arguments>--config ${basedir}/webpack-release.config.js</arguments>
+							<arguments>run build</arguments>
 						</configuration>
 					</execution>
 				</executions>
