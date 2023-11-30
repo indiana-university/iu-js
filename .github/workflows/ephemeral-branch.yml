@@ -74,11 +74,10 @@ jobs:
             mkdir -p $t
             mv $a $t
           done
-          if (git commit --dry-run)
+          if (git add docs && git commit --dry-run)
           then
             git config user.name eshrastg
             git config user.email ess-dev-l@iu.edu
-            git add docs
             git commit -m "publish $GITHUB_ACTOR $GITHUB_REF_NAME"
             git push
           fi
