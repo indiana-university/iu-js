@@ -59,7 +59,10 @@ jobs:
          run: |
           git config --global --add safe.directory $PWD
           git fetch origin github_pages
-          git checkout github_pages
+          git checkout github_pages || {
+            git checkout -b github_pages
+            git push --set-upstream origin/github_pages
+          }
           git pull
           rm -rf docs/$GITHUB_REF_NAME
           mkdir -p docs/$GITHUB_REF_NAME
