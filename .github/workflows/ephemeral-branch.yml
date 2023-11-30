@@ -63,7 +63,7 @@ jobs:
             git checkout github_pages
           else
             git checkout -b github_pages
-            git push --set-upstream origin/github_pages
+            git push --set-upstream origin github_pages
           fi
           git pull
           rm -rf docs/$GITHUB_REF_NAME
