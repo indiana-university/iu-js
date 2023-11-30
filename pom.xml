@@ -5,8 +5,8 @@
 
 	<parent>
 		<groupId>edu.iu.util</groupId>
-		<artifactId>iu-parent</artifactId>
-		<version>7.0.0</version>
+		<artifactId>iu-java-parent</artifactId>
+		<version>7.0.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
