@@ -5,13 +5,13 @@
 
 	<parent>
 		<groupId>edu.iu.util</groupId>
-		<artifactId>iu-parent</artifactId>
-		<version>7.0.0</version>
+		<artifactId>iu-java-parent</artifactId>
+		<version>7.0.0-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 
 	<artifactId>iu-js-parent</artifactId>
-	<version>0.7.2</version>
+	<version>0.7.3-SNAPSHOT</version>
 
 	<name>IU JavaScript Parent</name>
 	<packaging>pom</packaging>
