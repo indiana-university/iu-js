@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>edu.iu.util</groupId>
 		<artifactId>iu-js-parent</artifactId>
-		<version>0.7.3-SNAPSHOT</version>
+		<version>0.7.3</version>
 	</parent>
 
 	<artifactId>iu-js-util</artifactId>
